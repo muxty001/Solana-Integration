@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Solana Simple Send</title>
+  <link rel="stylesheet" href="index.css" type="text/css">
+ <script src="https://unpkg.com/@solana/web3.js@1.33.0/lib/index.iife.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/buffer/6.0.3/index.min.js"></script>
+    <script>
+      window.Buffer = buffer.Buffer;
+    </script></head>
+
+<body>
+
+  <div class="column">
+    <img class="Image" src="https://images.seeklogo.com/logo-png/39/1/solana-sol-logo-png_seeklogo-398274.png" alt="Solana">
+    <button id="connect_button" class="button-9" onclick="connectWallet()">Connect</button>
+    <input class="Input" type="number" placeholder="SOL to send" id="quantity" />
+    <button class="button-9" onclick="handleSend()">
+      Send
+    </button>
+    <p id="status_p">Status: <span id="status">Not Connected</span></p>
+  </div>
+
+  <script>
+    let wallet;
+    const lamports_per_sol = solanaWeb3.LAMPORTS_PER_SOL;
+
+    // --- Wallet Connection ---
+
+    const connectWallet = async () => {
+      try {
+        const solana = window.solana;
+        if (solana) {
+          const response = await solana.connect();
+          wallet = response;
+          // Handle wallet connection event
+          solana.on("connect", () => {
+            document.getElementById("connect_button").innerText = "Connected";
+            document.getElementById("status").innerText = "Wallet connected successfully!";
+            console.log("Connected to wallet:", wallet.publicKey.toString());
+          });
+        } else {
+            alert("Solana wallet object not found! Get a Phantom Wallet 👻");
+            window.open("https://phantom.app/", "_blank");
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById("status").innerText = "Error connecting wallet.";
+      }
+    };
+
+    // --- UI and Input Handling ---
+
+    const handleSend = async () => {
+      const quantity = document.getElementById("quantity").value;
+      const statusEl = document.getElementById("status");
+      
+      if (!wallet || !wallet.publicKey) {
+          statusEl.innerText = "Please connect your wallet first!";
+          return;
+      }
+
+      if (!quantity || quantity <= 0) {
+        statusEl.innerText = "Amount must be greater than 0!";
+        return;
+      }
+      
+      // Hardcoded recipient for this example
+      const receiverAddress = "5EfC6iMFajJrH4USSRMPTaXJ2RhtCePkMgsZZipbrEN1";
+      await sendSolTransaction(receiverAddress, quantity);
+    };
+
+    // --- Core Transaction Logic ---
+
+    const sendSolTransaction = async (destPubkeyStr, quantity) => {
+      const statusEl = document.getElementById("status");
+      
+      try {
+        statusEl.innerText = `Sending ${quantity} SOL to ${ellipsizeAddress(destPubkeyStr)}...`;
+
+        // 1. Establish a connection to the Solana devnet
+        const network = "https://api.devnet.solana.com";
+        const connection = new solanaWeb3.Connection(network);
+        const destPubkey = new solanaWeb3.PublicKey(destPubkeyStr);
+
+        // 2. Create a transaction instruction
+        const transaction = new solanaWeb3.Transaction().add(
+          solanaWeb3.SystemProgram.transfer({
+            fromPubkey: wallet.publicKey,
+            toPubkey: destPubkey,
+            lamports: quantity * lamports_per_sol,
+          })
+        );
+
+        // 3. Set the fee payer and recent blockhash
+        transaction.feePayer = wallet.publicKey;
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+
+        // 4. Request the wallet to sign and send the transaction
+        const { signature } = await window.solana.signAndSendTransaction(transaction);
+        
+        // 5. Confirm the transaction
+        await connection.confirmTransaction(signature, 'confirmed');
+
+        console.log("Transaction successful with signature:", signature);
+        
+        // Update UI on success with a link to the explorer
+        statusEl.innerHTML = `Success! <a href="https://explorer.solana.com/tx/${signature}?cluster=devnet" target="_blank">View on Explorer</a>`;
+        
+      } catch (error) {
+        console.error("Transaction failed:", error);
+        statusEl.innerText = `Transaction failed: ${error.message}`;
+      }
+    };
+    
+    // --- Helper Functions ---
+
+    function ellipsizeAddress(str, n = 8) {
+        if (str.length > (n * 2)) {
+            return str.substr(0, n) + '...' + str.substr(str.length - n, str.length);
+        }
+        return str;
+    }
+
+  </script>
+</body>
+
+</html>
