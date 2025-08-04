@@ -1,130 +1,700 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <title>Solana Simple Send</title>
-  <link rel="stylesheet" href="index.css" type="text/css">
- <script src="https://unpkg.com/@solana/web3.js@1.33.0/lib/index.iife.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/buffer/6.0.3/index.min.js"></script>
-    <script>
-      window.Buffer = buffer.Buffer;
-    </script></head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Wallet Adapter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #9945FF, #14F195);
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            font-weight: bold;
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .wallet-status {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .wallet-status.connected {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            border-color: #38a169;
+        }
+
+        .wallet-status.connecting {
+            background: linear-gradient(135deg, #ed8936, #dd6b20);
+            color: white;
+            border-color: #dd6b20;
+        }
+
+        .status-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .wallet-address {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            opacity: 0.9;
+            word-break: break-all;
+        }
+
+        .wallet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .wallet-button {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: #2d3748;
+        }
+
+        .wallet-button:hover {
+            border-color: #9945FF;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(153, 69, 255, 0.15);
+        }
+
+        .wallet-button.connected {
+            background: linear-gradient(135deg, #9945FF, #14F195);
+            color: white;
+            border-color: #9945FF;
+        }
+
+        .wallet-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: #f7fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .wallet-button.connected .wallet-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .wallet-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #9945FF, #14F195);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(153, 69, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .balance-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+
+        .balance-label {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .balance-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 0.25rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff40;
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            .wallet-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
 <body>
+    <div class="container">
+        <div class="logo">◎</div>
+        <h1>Solana Wallet</h1>
+        <p class="subtitle">Connect your wallet to get started</p>
 
-  <div class="column">
-    <img class="Image" src="https://images.seeklogo.com/logo-png/39/1/solana-sol-logo-png_seeklogo-398274.png" alt="Solana">
-    <button id="connect_button" class="button-9" onclick="connectWallet()">Connect</button>
-    <input class="Input" type="number" placeholder="SOL to send" id="quantity" />
-    <button class="button-9" onclick="handleSend()">
-      Send
-    </button>
-    <p id="status_p">Status: <span id="status">Not Connected</span></p>
-  </div>
+        <div class="wallet-status" id="walletStatus">
+            <div class="status-text" id="statusText">Not Connected</div>
+            <div class="wallet-address hidden" id="walletAddress"></div>
+        </div>
 
-  <script>
-    let wallet;
-    const lamports_per_sol = solanaWeb3.LAMPORTS_PER_SOL;
+        <div class="wallet-grid" id="walletGrid">
+            <div class="wallet-button" data-wallet="phantom">
+                <div class="wallet-icon">P</div>
+                <div class="wallet-name">Phantom</div>
+            </div>
+            <div class="wallet-button" data-wallet="solflare">
+                <div class="wallet-icon">S</div>
+                <div class="wallet-name">Solflare</div>
+            </div>
+            <div class="wallet-button" data-wallet="backpack">
+                <div class="wallet-icon">B</div>
+                <div class="wallet-name">Backpack</div>
+            </div>
+            <div class="wallet-button" data-wallet="sollet">
+                <div class="wallet-icon">W</div>
+                <div class="wallet-name">Sollet</div>
+            </div>
+        </div>
 
-    // --- Wallet Connection ---
+        <div class="action-buttons">
+            <button class="btn btn-primary hidden" id="disconnectBtn">
+                Disconnect Wallet
+            </button>
+            <!-- <button class="btn btn-secondary hidden" id="balanceBtn">
+                Check Balance
+            </button> -->
+        </div>
 
-    const connectWallet = async () => {
-      try {
-        const solana = window.solana;
-        if (solana) {
-          const response = await solana.connect();
-          wallet = response;
-          // Handle wallet connection event
-          solana.on("connect", () => {
-            document.getElementById("connect_button").innerText = "Connected";
-            document.getElementById("status").innerText = "Wallet connected successfully!";
-            console.log("Connected to wallet:", wallet.publicKey.toString());
-          });
-        } else {
-            alert("Solana wallet object not found! Get a Phantom Wallet 👻");
-            window.open("https://phantom.app/", "_blank");
+        <div class="balance-display hidden" id="balanceDisplay">
+            <div class="balance-label">SOL Balance</div>
+            <div class="balance-amount" id="balanceAmount">0.00 SOL</div>
+        </div>
+    </div>
+
+    <script>
+        class SolanaWalletAdapter {
+            constructor() {
+                this.wallet = null;
+                this.publicKey = null;
+                this.connected = false;
+                this.connecting = false;
+                this.availableWallets = {};
+                this.initializeElements();
+                this.detectWallets();
+                this.bindEvents();
+            }
+
+            initializeElements() {
+                this.elements = {
+                    walletStatus: document.getElementById('walletStatus'),
+                    statusText: document.getElementById('statusText'),
+                    walletAddress: document.getElementById('walletAddress'),
+                    walletGrid: document.getElementById('walletGrid'),
+                    disconnectBtn: document.getElementById('disconnectBtn'),
+                    // balanceBtn: document.getElementById('balanceBtn'),
+                    balanceDisplay: document.getElementById('balanceDisplay'),
+                    balanceAmount: document.getElementById('balanceAmount')
+                };
+            }
+
+            detectWallets() {
+                // Check for Phantom wallet
+                if (window.solana && window.solana.isPhantom) {
+                    this.availableWallets.phantom = {
+                        name: 'Phantom',
+                        adapter: window.solana,
+                        icon: 'P'
+                    };
+                }
+
+                // Check for Solflare wallet
+                if (window.solflare && window.solflare.isSolflare) {
+                    this.availableWallets.solflare = {
+                        name: 'Solflare',
+                        adapter: window.solflare,
+                        icon: 'S'
+                    };
+                }
+
+                // Check for Backpack wallet
+                if (window.backpack) {
+                    this.availableWallets.backpack = {
+                        name: 'Backpack',
+                        adapter: window.backpack,
+                        icon: 'B'
+                    };
+                }
+
+                // Check for Sollet/Slope wallet
+                if (window.Slope) {
+                    this.availableWallets.slope = {
+                        name: 'Slope',
+                        adapter: window.Slope,
+                        icon: 'SL'
+                    };
+                }
+
+                // Check for Coin98 wallet
+                if (window.coin98 && window.coin98.sol) {
+                    this.availableWallets.coin98 = {
+                        name: 'Coin98',
+                        adapter: window.coin98.sol,
+                        icon: 'C98'
+                    };
+                }
+
+                // Check for Glow wallet
+                if (window.glowSolana) {
+                    this.availableWallets.glow = {
+                        name: 'Glow',
+                        adapter: window.glowSolana,
+                        icon: 'G'
+                    };
+                }
+
+                // Update UI to show only available wallets
+                this.updateWalletGrid();
+            }
+
+            updateWalletGrid() {
+                const walletButtons = this.elements.walletGrid.querySelectorAll('.wallet-button');
+                
+                walletButtons.forEach(button => {
+                    const walletType = button.dataset.wallet;
+                    
+                    if (this.availableWallets[walletType]) {
+                        button.style.opacity = '1';
+                        button.style.pointerEvents = 'auto';
+                        button.title = `${this.availableWallets[walletType].name} is installed`;
+                    } else {
+                        button.style.opacity = '0.4';
+                        button.style.pointerEvents = 'none';
+                        button.title = `${button.querySelector('.wallet-name').textContent} is not installed`;
+                    }
+                });
+            }
+
+            bindEvents() {
+                // Wallet selection
+                this.elements.walletGrid.addEventListener('click', (e) => {
+                    const walletButton = e.target.closest('.wallet-button');
+                    if (walletButton && !this.connecting) {
+                        const walletType = walletButton.dataset.wallet;
+                        if (this.availableWallets[walletType]) {
+                            this.connectWallet(walletType);
+                        } else {
+                            this.showWalletNotInstalledDialog(walletType);
+                        }
+                    }
+                });
+
+                // Disconnect button
+                this.elements.disconnectBtn.addEventListener('click', () => {
+                    this.disconnect();
+                });
+
+                // Balance check button
+                // this.elements.balanceBtn.addEventListener('click', () => {
+                //     this.checkBalance();
+                // });
+
+                // Listen for wallet events
+                this.setupWalletListeners();
+            }
+
+            async connectWallet(walletType) {
+                if (this.connecting) return;
+
+                const walletInfo = this.availableWallets[walletType];
+                if (!walletInfo) {
+                    this.showError(`${walletType} wallet is not installed`);
+                    return;
+                }
+
+                this.connecting = true;
+                this.updateUI();
+
+                try {
+                    const adapter = walletInfo.adapter;
+                    
+                    // Different connection methods for different wallets
+                    let response;
+                    
+                    if (walletType === 'phantom' || walletType === 'solflare' || walletType === 'backpack') {
+                        // Standard Solana wallet adapter pattern
+                        response = await adapter.connect();
+                    } else if (walletType === 'slope') {
+                        // Slope has a different connection method
+                        response = await adapter.connect();
+                    } else if (walletType === 'coin98') {
+                        // Coin98 connection
+                        response = await adapter.connect();
+                    } else if (walletType === 'glow') {
+                        // Glow connection
+                        response = await adapter.connect();
+                    }
+                    
+                    if (response && (response.publicKey || adapter.publicKey)) {
+                        this.connected = true;
+                        this.publicKey = (response.publicKey || adapter.publicKey).toString();
+                        this.wallet = walletType;
+                        
+                        console.log(`Connected to ${walletInfo.name} wallet`);
+                        console.log('Public Key:', this.publicKey);
+                        
+                        // Listen for account changes
+                        this.setupWalletAccountListener(adapter);
+                        
+                    } else {
+                        throw new Error('No public key received from wallet');
+                    }
+                    
+                } catch (error) {
+                    console.error('Failed to connect wallet:', error);
+                    
+                    if (error.message.includes('User rejected')) {
+                        this.showError('Connection cancelled by user');
+                    } else if (error.message.includes('already pending')) {
+                        this.showError('Please check your wallet for pending connection request');
+                    } else {
+                        this.showError(`Failed to connect to ${walletInfo.name}. Please try again.`);
+                    }
+                } finally {
+                    this.connecting = false;
+                    this.updateUI();
+                }
+            }
+
+            setupWalletAccountListener(adapter) {
+                // Listen for account changes
+                if (adapter.on) {
+                    adapter.on('accountChanged', (publicKey) => {
+                        if (publicKey) {
+                            this.publicKey = publicKey.toString();
+                            console.log('Account changed:', this.publicKey);
+                            this.updateUI();
+                        } else {
+                            // Account disconnected
+                            this.disconnect();
+                        }
+                    });
+
+                    adapter.on('disconnect', () => {
+                        console.log('Wallet disconnected');
+                        this.disconnect();
+                    });
+                }
+            }
+
+            showWalletNotInstalledDialog(walletType) {
+                const walletUrls = {
+                    phantom: 'https://phantom.app/',
+                    solflare: 'https://solflare.com/',
+                    backpack: 'https://backpack.app/',
+                    slope: 'https://slope.finance/',
+                    coin98: 'https://coin98.com/',
+                    glow: 'https://glow.app/'
+                };
+
+                const walletNames = {
+                    phantom: 'Phantom',
+                    solflare: 'Solflare',
+                    backpack: 'Backpack',
+                    slope: 'Slope',
+                    coin98: 'Coin98',
+                    glow: 'Glow'
+                };
+
+                const result = confirm(`${walletNames[walletType]} wallet is not installed. Would you like to install it?`);
+                
+                if (result && walletUrls[walletType]) {
+                    window.open(walletUrls[walletType], '_blank');
+                }
+            }
+
+            async disconnect() {
+                if (this.wallet && this.availableWallets[this.wallet]) {
+                    try {
+                        const adapter = this.availableWallets[this.wallet].adapter;
+                        if (adapter.disconnect) {
+                            await adapter.disconnect();
+                        }
+                    } catch (error) {
+                        console.error('Error disconnecting wallet:', error);
+                    }
+                }
+                
+                this.wallet = null;
+                this.publicKey = null;
+                this.connected = false;
+                this.updateUI();
+                this.elements.balanceDisplay.classList.add('hidden');
+                console.log('Wallet disconnected');
+            }
+
+            async checkBalance() {
+                if (!this.connected || !this.publicKey) return;
+
+                try {
+                    // For demo purposes, we'll simulate balance fetching
+                    // In a real app, you'd use Solana's Connection class:
+                    // const connection = new Connection(clusterApiUrl('devnet'));
+                    // const balance = await connection.getBalance(new PublicKey(this.publicKey));
+                    
+                    const balance = (Math.random() * 10).toFixed(4);
+                    this.elements.balanceAmount.textContent = `${balance} SOL`;
+                    this.elements.balanceDisplay.classList.remove('hidden');
+                    
+                    console.log('Balance fetched for:', this.publicKey);
+                } catch (error) {
+                    console.error('Failed to fetch balance:', error);
+                    this.showError('Failed to fetch balance');
+                }
+            }
+
+            updateUI() {
+                // Update status
+                if (this.connecting) {
+                    this.elements.walletStatus.className = 'wallet-status connecting';
+                    this.elements.statusText.innerHTML = '<span class="loading"></span> Connecting...';
+                    this.elements.walletAddress.classList.add('hidden');
+                } else if (this.connected) {
+                    this.elements.walletStatus.className = 'wallet-status connected';
+                    this.elements.statusText.textContent = `Connected to ${this.wallet}`;
+                    this.elements.walletAddress.textContent = this.formatAddress(this.publicKey);
+                    this.elements.walletAddress.classList.remove('hidden');
+                } else {
+                    this.elements.walletStatus.className = 'wallet-status';
+                    this.elements.statusText.textContent = 'Not Connected';
+                    this.elements.walletAddress.classList.add('hidden');
+                }
+
+                // Update wallet buttons
+                const walletButtons = this.elements.walletGrid.querySelectorAll('.wallet-button');
+                walletButtons.forEach(button => {
+                    const walletType = button.dataset.wallet;
+                    if (this.connected && this.wallet === walletType) {
+                        button.classList.add('connected');
+                    } else {
+                        button.classList.remove('connected');
+                    }
+                });
+
+                // Update action buttons
+                if (this.connected) {
+                    this.elements.disconnectBtn.classList.remove('hidden');
+                    // this.elements.balanceBtn.classList.remove('hidden');
+                } else {
+                    this.elements.disconnectBtn.classList.add('hidden');
+                    // this.elements.balanceBtn.classList.add('hidden');
+                }
+            }
+
+            formatAddress(address) {
+                if (!address) return '';
+                return `${address.slice(0, 6)}...${address.slice(-6)}`;
+            }
+
+            setupWalletListeners() {
+                // Re-detect wallets periodically in case they get installed
+                setInterval(() => {
+                    const oldCount = Object.keys(this.availableWallets).length;
+                    this.detectWallets();
+                    const newCount = Object.keys(this.availableWallets).length;
+                    
+                    if (newCount > oldCount) {
+                        console.log('New wallet detected!');
+                    }
+                }, 3000);
+
+                // Listen for window.solana events (Phantom specific)
+                if (window.solana) {
+                    window.solana.on('connect', (publicKey) => {
+                        console.log('Phantom auto-connected:', publicKey.toString());
+                    });
+                }
+            }
+
+            showError(message) {
+                // Create a better error display
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+                    z-index: 1000;
+                    font-weight: 600;
+                    max-width: 300px;
+                    word-wrap: break-word;
+                `;
+                errorDiv.textContent = message;
+                document.body.appendChild(errorDiv);
+                
+                setTimeout(() => {
+                    errorDiv.remove();
+                }, 5000);
+            }
         }
-      } catch (err) {
-        console.error(err);
-        document.getElementById("status").innerText = "Error connecting wallet.";
-      }
-    };
 
-    // --- UI and Input Handling ---
+        // Initialize the wallet adapter when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.walletAdapter = new SolanaWalletAdapter();
+            
+            // Show detection status
+            setTimeout(() => {
+                const availableCount = Object.keys(window.walletAdapter.availableWallets).length;
+                console.log(`Detected ${availableCount} wallet(s):`, Object.keys(window.walletAdapter.availableWallets));
+                
+                if (availableCount === 0) {
+                    console.log('No wallets detected. Please install a Solana wallet extension.');
+                }
+            }, 1000);
+        });
 
-    const handleSend = async () => {
-      const quantity = document.getElementById("quantity").value;
-      const statusEl = document.getElementById("status");
-      
-      if (!wallet || !wallet.publicKey) {
-          statusEl.innerText = "Please connect your wallet first!";
-          return;
-      }
+        // Real implementation would include:
+        /*
+        // Import Solana wallet adapter libraries
+        import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+        import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+        import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
+        import { Connection, clusterApiUrl } from '@solana/web3.js';
 
-      if (!quantity || quantity <= 0) {
-        statusEl.innerText = "Amount must be greater than 0!";
-        return;
-      }
-      
-      // Hardcoded recipient for this example
-      const receiverAddress = "5EfC6iMFajJrH4USSRMPTaXJ2RhtCePkMgsZZipbrEN1";
-      await sendSolTransaction(receiverAddress, quantity);
-    };
+        const network = WalletAdapterNetwork.Devnet;
+        const endpoint = clusterApiUrl(network);
+        const connection = new Connection(endpoint);
 
-    // --- Core Transaction Logic ---
-
-    const sendSolTransaction = async (destPubkeyStr, quantity) => {
-      const statusEl = document.getElementById("status");
-      
-      try {
-        statusEl.innerText = `Sending ${quantity} SOL to ${ellipsizeAddress(destPubkeyStr)}...`;
-
-        // 1. Establish a connection to the Solana devnet
-        const network = "https://api.devnet.solana.com";
-        const connection = new solanaWeb3.Connection(network);
-        const destPubkey = new solanaWeb3.PublicKey(destPubkeyStr);
-
-        // 2. Create a transaction instruction
-        const transaction = new solanaWeb3.Transaction().add(
-          solanaWeb3.SystemProgram.transfer({
-            fromPubkey: wallet.publicKey,
-            toPubkey: destPubkey,
-            lamports: quantity * lamports_per_sol,
-          })
-        );
-
-        // 3. Set the fee payer and recent blockhash
-        transaction.feePayer = wallet.publicKey;
-        const { blockhash } = await connection.getLatestBlockhash();
-        transaction.recentBlockhash = blockhash;
-
-        // 4. Request the wallet to sign and send the transaction
-        const { signature } = await window.solana.signAndSendTransaction(transaction);
-        
-        // 5. Confirm the transaction
-        await connection.confirmTransaction(signature, 'confirmed');
-
-        console.log("Transaction successful with signature:", signature);
-        
-        // Update UI on success with a link to the explorer
-        statusEl.innerHTML = `Success! <a href="https://explorer.solana.com/tx/${signature}?cluster=devnet" target="_blank">View on Explorer</a>`;
-        
-      } catch (error) {
-        console.error("Transaction failed:", error);
-        statusEl.innerText = `Transaction failed: ${error.message}`;
-      }
-    };
-    
-    // --- Helper Functions ---
-
-    function ellipsizeAddress(str, n = 8) {
-        if (str.length > (n * 2)) {
-            return str.substr(0, n) + '...' + str.substr(str.length - n, str.length);
-        }
-        return str;
-    }
-
-  </script>
+        const wallets = [
+            new PhantomWalletAdapter(),
+            new SolflareWalletAdapter(),
+        ];
+        */
+    </script>
 </body>
-
 </html>
